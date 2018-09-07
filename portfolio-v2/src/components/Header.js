@@ -5,9 +5,12 @@ import '../Scripts.js'
 function Header(){
   
     return (
-        <div className="header"> 
-        
+        <div>
+        <div className='header'>
         </div>
+        <h1 className='title'>NATHAN SIMMONS</h1>
+        </div>
+        
     );
   
 }
