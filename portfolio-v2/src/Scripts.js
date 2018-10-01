@@ -1,81 +1,29 @@
-import $ from "jquery";
 
+const ctx = c.getContext('2d'),
+scale = 10,
+noiseScale = 100,
+noise = new SimplexNoise(),
+timeGain = 0.0035,
+colors = [
+    '#69D2E7',
+    '#A7DBD8',
+    '#E0E4CC',
+    '#F38630',
+    '#FA6900'
+];
 
-$(document).ready(function(){
-    canvasArea.start();
-});
+let time = 0;
 
-//Holds all bubbles
-var bubbles = [];
-
-//Typical canvas variables
-var canvasArea = {
-    canvas : document.createElement("canvas"),
-    start : function() {
-        this.canvas.width = $(document).width();
-        this.canvas.height = $(document).height();
-        this.context = this.canvas.getContext("2d");
-        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-        this.update();
-    },
-    update: function(){
-        requestAnimationFrame(this.update.bind(this));
-        updateCanvasArea();
-    },
-    clear : function() {
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    }
+let draw = () => {
+time += timeGain;
+c.width = window.innerWidth;
+c.height = window.innerHeight;
+for(y=0; y<Math.ceil(c.height/scale); y++) {
+for(x=0; x<Math.ceil(c.width/scale); x++) {
+ctx.fillStyle = colors[ ~~(noise.noise3D(x/noiseScale,y/noiseScale,time)*3)+2 ];
+ctx.fillRect(x*scale, y*scale, scale, scale);
 }
-
-//On mouse move, add more bubbles
-$(document).mousemove(function(event){
-    bubbles.push(new bubble(event.pageX,event.pageY));
-});
-
-//Constructor to add more bubbles
-//Width, speed, and color are randomized.
-function bubble(x,y,color){
-    this.w = (Math.random()*40)+5;
-    this.x = x;
-    this.y = y;
-    this.color = Math.floor(Math.random()*16777215).toString(16);
-    this.speed = (Math.random()*5)+1;
 }
-
-//This is where all the magic happens
-function updateCanvasArea() {
-    canvasArea.clear();
-    let ctx = canvasArea.context;
-    
-    //Displays Instructions behind the bubbles
-    var output = "Move your mouse here!";
-    ctx.fillStyle="#ccc";
-    ctx.font="bold 30px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(output, canvasArea.canvas.width / 2, canvasArea.canvas.height / 2);
-    
-    //The only thing this program does is draw bubbles.
-    for(var i = 0; i < bubbles.length; i++){
-        //Selects color from bubble object.
-        ctx.fillStyle="#"+bubbles[i].color;
-        //This draws circles where the bubble is positioned
-        ctx.beginPath();
-        ctx.arc(bubbles[i].x,bubbles[i].y,bubbles[i].w,0,Math.PI*2,true);
-        ctx.fill();
-        //This moves the bubble.
-        bubbles[i].y -= bubbles[i].speed;
-    }
-    for(var j = 0; j < bubbles.length; j++){
-        //This deletes bubbles when they move off screen.
-        if(bubbles[j].y < (bubbles[j].w*-1)){
-            bubbles.splice(j,1);
-        }
-    }
+window.requestAnimationFrame(draw);
 }
-
-//This was added so when the screen moves, the bubbles still fill the whole space.
-$(window).resize(function(){
-    canvasArea.canvas.width = $(document).width();
-    canvasArea.canvas.height = $(document).height();
-});
+draw();
