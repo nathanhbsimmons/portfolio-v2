@@ -1,49 +1,104 @@
 import React, { Component } from 'react';
+import SimplexNoise from 'simplex-noise'
+import {Canvas} from './Canvas'
 import '../App.css';
 // import '../Scripts.js'
 
 
 
 class Header extends Component{
+    
     componentDidMount() {
-        this.updateCanvas();
+        this.init();
     }
-    draw (time, scale, ctx, noiseScale, noise, timeGain, colors) {
-        time += timeGain;
-        this.refs.canvas.width = window.innerWidth;
-        this.refs.canvas.height = window.innerHeight;
-        for(y=0; y<Math.ceil(this.refs.canvas.height/scale); y++) {
-        for(x=0; x<Math.ceil(this.refs.canvas.width/scale); x++) {
-        ctx.fillStyle = colors[ ~~(noise.noise3D(x/noiseScale,y/noiseScale,time)*3)+2 ];
-        ctx.fillRect(x*scale, y*scale, scale, scale);
+    
+   init=()=> {
+    var width = window.innerWidth
+    let height = window.innerHeight
+
+
+    var paint = [];
+
+    var totalPaints = (width / 50)
+    var size = 20;
+ 
+    let ctx = this.refs.canvas.getContext('2d');
+    ctx.width = width;
+    ctx.height = height;
+        for (var i = 0; i < totalPaints; i++) {
+          this.addPaint(size, paint, height, width);
         }
-        }
-        window.requestAnimationFrame(draw);
-        }
-    updateCanvas() {
-        const ctx = this.refs.canvas.getContext('2d');
-        scale = 10,
-        noiseScale = 100,
-        noise = new SimplexNoise(),
-        timeGain = 0.0035,
-        colors = [
-            '#69D2E7',
-            '#A7DBD8',
-            '#E0E4CC',
-            '#F38630',
-            '#FA6900'
-        ];
+        setInterval(this.update, 40, paint, ctx, size, height, width);
+      }
+      
+     drawPaint=(x, y, size, colour, ctx)=> {
         
-        let time = 0;
-        
-       
-        this.draw(time, scale, ctx, noiseScale, noise, timeGain, colors);
-    }
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fillStyle = colour;
+        ctx.fill();
+      }
+      
+     update=(paint, ctx, size, height, width)=> {
+         
+        for (var i = 0; i < paint.length; i++) {
+          paint[i].y = paint[i].y + paint[i].v;
+          if (paint[i].y > height + 60) {
+            paint.splice(i, 1);
+            this.addPaint(size, paint, height, width);
+          }
+          this.drawPaint(paint[i].x, paint[i].y, paint[i].s, paint[i].c, ctx);
+        }
+      }
+      
+     addPaint=(size, paint, height, width)=> {
+        //Try 50 times
+        var i = 50;
+        while (i > 0) {
+          size = Math.random() * size + 10;
+          let x = Math.random() * width;
+      
+          let found = false;
+      
+          //Dont Allow drips ontop of each other (Overtaking drops destroy the prettyness)
+          for (var j = 0; j < paint.length; j++) {
+            if (x + size > paint[j].x && x - size < paint[j].x + paint[j].s) {
+              found = true;
+              break;
+            }
+      
+            if (x - size < paint[j].x && x + size > paint[j].x - paint[j].s) {
+              found = true;
+              break;
+            }
+          }
+      
+          if (found == false) {
+            paint.push({
+              s: size,
+              x: x,
+              y: -60,
+              v: Math.random() * 2 + 2,
+              c: "#" + ((Math.random() * 0x313131 + 0xaaaaaa) | 0).toString(16)
+            });
+            i--;
+            return;
+          }
+        }
+      }
+      
+    
+      
+
   
   render(){
     return (
         <div id="header">
+        <Canvas>
         <canvas ref='canvas'></canvas>
+        </Canvas>
+        
         
        
         <h1 className='title'>NATHAN SIMMONS</h1>

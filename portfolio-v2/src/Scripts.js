@@ -1,29 +1,75 @@
+var width = window.innerWidth
+let height = window.innerHeight
+let c = this.refs.canvas.getContext('2d');
+let ctx = c.getContext("2d");
+c.width = width;
+c.height = height;
 
-const ctx = c.getContext('2d'),
-scale = 10,
-noiseScale = 100,
-noise = new SimplexNoise(),
-timeGain = 0.0035,
-colors = [
-    '#69D2E7',
-    '#A7DBD8',
-    '#E0E4CC',
-    '#F38630',
-    '#FA6900'
-];
+var paint = [];
 
-let time = 0;
+var totalPaints = width / 50;
+var size = 20;
 
-let draw = () => {
-time += timeGain;
-c.width = window.innerWidth;
-c.height = window.innerHeight;
-for(y=0; y<Math.ceil(c.height/scale); y++) {
-for(x=0; x<Math.ceil(c.width/scale); x++) {
-ctx.fillStyle = colors[ ~~(noise.noise3D(x/noiseScale,y/noiseScale,time)*3)+2 ];
-ctx.fillRect(x*scale, y*scale, scale, scale);
+function init() {
+  for (var i = 0; i < totalPaints; i++) {
+    addPaint();
+  }
+  setInterval(update, 40);
 }
+
+function drawPaint(x, y, size, colour) {
+  ctx.beginPath();
+  ctx.arc(x, y, size, 0, Math.PI * 2, true);
+  ctx.closePath();
+  ctx.fillStyle = colour;
+  ctx.fill();
 }
-window.requestAnimationFrame(draw);
+
+function update() {
+  for (var i = 0; i < paint.length; i++) {
+    paint[i].y = paint[i].y + paint[i].v;
+    if (paint[i].y > height + 60) {
+      paint.splice(i, 1);
+      addPaint();
+    }
+    drawPaint(paint[i].x, paint[i].y, paint[i].s, paint[i].c);
+  }
 }
-draw();
+
+function addPaint() {
+  //Try 50 times
+  var i = 50;
+  while (i > 0) {
+    size = Math.random() * size + 10;
+    let x = Math.random() * width;
+
+    let found = false;
+
+    //Dont Allow drips ontop of each other (Overtaking drops destroy the prettyness)
+    for (var j = 0; j < paint.length; j++) {
+      if (x + size > paint[j].x && x - size < paint[j].x + paint[j].s) {
+        found = true;
+        break;
+      }
+
+      if (x - size < paint[j].x && x + size > paint[j].x - paint[j].s) {
+        found = true;
+        break;
+      }
+    }
+
+    if (found == false) {
+      paint.push({
+        s: size,
+        x: x,
+        y: -60,
+        v: Math.random() * 2 + 2,
+        c: "#" + ((Math.random() * 0x313131 + 0xaaaaaa) | 0).toString(16)
+      });
+      i--;
+      return;
+    }
+  }
+}
+
+init();
